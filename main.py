@@ -9,10 +9,10 @@ def merge_phrases(matcher, doc, i, matches):
     Merge a phrase. We have to be careful here because we'll change the token indices.
     To avoid problems, merge all the phrases once we're called on the last match.
     '''
-    if i != len(matches)-1:
+    if i != len(matches) - 1:
         return None
     # Get Span objects
-    spans = [(ent_id, label, doc[start : end]) for ent_id, label, start, end in matches]
+    spans = [(ent_id, label, doc[start: end]) for ent_id, label, start, end in matches]
     for ent_id, label, span in spans:
         span.merge(label=label, tag='NNP' if label else span.root.tag_)
 
@@ -70,8 +70,8 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
              rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/owner'),
              rdflib.URIRef('https://www.adria.si/en/')))
     rdf.add((rdflib.URIRef('https://en.wikipedia.org/wiki/Bombardier_CRJ700_series'),
-            rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/fly'),
-            rdflib.URIRef('https://en.wikipedia.org/wiki/Lisbon_Airport')))
+             rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/fly'),
+             rdflib.URIRef('https://en.wikipedia.org/wiki/Lisbon_Airport')))
     return rdf
 
 
