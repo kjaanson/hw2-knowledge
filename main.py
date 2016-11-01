@@ -26,25 +26,27 @@ def to_nltk_tree(node):
 
 def add_matchers(spc, datafile=None):
     matcher = spacy.matcher.Matcher(spc.vocab)
-    matcher.add_entity(
-        "Aircraft1",  # Entity ID -- Helps you act on the match.
-        {"ent_type": "PRODUCT"},  # Arbitrary attributes (optional)
-        acceptor=None,  # Accept or modify the match
-        on_match=merge_phrases  # Callback to act on the matches
-    )
-
-    matcher.add_pattern(
-        "Aircraft1",  # Entity ID -- Created if doesn't exist.
-        [  # The pattern is a list of *Token Specifiers*.
-            {  # This Token Specifier matches tokens whose orth field is "Google"
-                ORTH: "Bombardier"
-            },
-            {  # This Token Specifier matches tokens whose orth field is "Now"
-                ORTH: "CRJ700"
-            }
-        ],
-        label=None  # Can associate a label to the pattern-match, to handle it better.
-    )
+    entity_id = 0
+    with open(datafile, "r", encoding="utf-8") as f:
+        models = f.readlines()
+        for model in models:
+            entity_id_str = "Aircraft" + str(entity_id)
+            entity_id += 1
+            matcher.add_entity(
+                entity_id_str,
+                {"ent_type": "PRODUCT"},
+                acceptor=None,
+                on_match=merge_phrases
+            )
+            model_tokens = model.split(sep=' ')
+            tokens = []
+            for tk in model_tokens:
+                tokens.append({ORTH: tk})
+            matcher.add_pattern(
+                entity_id_str,
+                tokens,
+                label=None
+            )
     return matcher
 
 
@@ -53,7 +55,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     Attempts to parse a natural language sentence to RDF
     :param spacy: pass the spacy pipeline by reference
     :param sentence: the sentence to be converted
-    :return: rdflib Graph object
+    :return: rdflib Graph object                                                        
     """
     rdf = rdflib.Graph()
     parsed = spacy(sentence)
@@ -77,10 +79,10 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 def main():
     # get the sentences to process. We consider eah sentence out of context, to keep things simple
-    sentences = ['Bombardier CRJ700 belonging to Adria Airways is flying to Lisbon Portela Airport.']
+    sentences = ['Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.']
     # load the spacy english pipeline
     spc = spacy.en.English()
-    matcher = add_matchers(spc)
+    matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
     # process the sentences
     for sentence in sentences:
         print(str(parse_sentence_to_rdf(spc, sentence, matcher).serialize(format='n3')).replace('\\n', '\n'))
