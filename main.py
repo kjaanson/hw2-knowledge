@@ -1,7 +1,7 @@
 import rdflib
 import spacy
 from nltk import Tree
-from spacy.attrs import ORTH
+from spacy.attrs import LEMMA
 
 
 def merge_phrases(matcher, doc, i, matches):
@@ -19,9 +19,9 @@ def merge_phrases(matcher, doc, i, matches):
 
 def to_nltk_tree(node):
     if node.n_lefts + node.n_rights > 0:
-        return Tree(node.orth_, [to_nltk_tree(child) for child in node.children])
+        return Tree(node.orth_ + ' ' + node.tag_ + ' ' + node.dep_, [to_nltk_tree(child) for child in node.children])
     else:
-        return node.orth_
+        return node.orth_ + ' ' + node.tag_ + ' ' + node.dep_
 
 
 def add_matchers(spc, datafile=None):
@@ -30,6 +30,7 @@ def add_matchers(spc, datafile=None):
     with open(datafile, "r", encoding="utf-8") as f:
         models = f.readlines()
         for model in models:
+            model = model.rstrip(' \r\n').lower()
             entity_id_str = "Aircraft" + str(entity_id)
             entity_id += 1
             matcher.add_entity(
@@ -41,7 +42,7 @@ def add_matchers(spc, datafile=None):
             model_tokens = model.split(sep=' ')
             tokens = []
             for tk in model_tokens:
-                tokens.append({ORTH: tk})
+                tokens.append({LEMMA: tk})
             matcher.add_pattern(
                 entity_id_str,
                 tokens,
@@ -60,6 +61,10 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     rdf = rdflib.Graph()
     parsed = spacy(sentence)
     matcher(parsed)
+
+    #create RDF from dependency tree
+
+
     [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
     print(parsed.ents)
     for word in parsed:
@@ -79,13 +84,11 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 def main():
     # get the sentences to process. We consider eah sentence out of context, to keep things simple
-    sentences = ['Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.']
+    text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
-    # process the sentences
-    for sentence in sentences:
-        print(str(parse_sentence_to_rdf(spc, sentence, matcher).serialize(format='n3')).replace('\\n', '\n'))
+    print(str(parse_sentence_to_rdf(spc, text, matcher).serialize(format='n3')).replace('\\n', '\n'))
 
 
 if __name__ == '__main__':
