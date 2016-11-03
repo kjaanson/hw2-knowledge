@@ -96,8 +96,8 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     triples = []
     for sent in parsed.sents:
         for word in sent:
-            if word.dep_ == 'nsubj':
-                subject = word
+            if 'subj' in word.dep_:
+                subject = word.text
         branches = to_branches(sent.root)
         for branch in branches:
             # for each branch, start from the bottom of the tree and find noun, verb, noun triples
@@ -105,7 +105,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
             branch.reverse()
             triple = [None, None, None]
             for token in branch:
-                if 'NNP' in token.tag_:
+                if 'NN' in token.tag_:
                     if triple[2] is None:
                         triple[2] = token.text
                     else:
@@ -116,13 +116,15 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
             if triple[0] is None:
                 # if a branch is missing a noun, use the nsubj of the sentence as the other verb
                 triple[0] = subject
+            if triple[1] is None:
+                triple[1] = 'is'
             if (triple[0] is not None) and (triple[1] is not None) and (triple[2] is not None):
                 triples.append(triple)
 
     for triple in triples:
         rdf.add((rdflib.Literal(triple[0]), rdflib.Literal(triple[1]), rdflib.Literal(triple[2])))
 
-    # [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
+    [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
     # print(parsed.ents)
     # for word in parsed:
     #    print(word.text, word.tag_, word.ent_type_, word.ent_iob)
@@ -140,9 +142,10 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 
 def main():
-    # get the sentences to process. We consider eah sentence out of context, to keep things simple
-    text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
-    # text = 'The competition between Airbus and Boeing has been characterised as a duopoly in the large jet airliner market since the 1990s.[1] This resulted from a series of mergers within the global aerospace industry, with Airbus beginning as a European consortium while the American Boeing absorbed its former arch-rival, McDonnell Douglas, in a 1997 merger. Other manufacturers, such as Lockheed Martin, Convair and Fairchild Aircraft in the United States, and British Aerospace and Fokker in Europe, were no longer in a position to compete effectively and withdrew from this market.'
+    # text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
+    text = '''
+    American Airlines Flight 587 was a regularly scheduled passenger flight from John F. Kennedy International Airport in New York City to Santo Domingo's Las Américas International Airport in the Dominican Republic. On November 12, 2001, the Airbus A300-600 flying the route crashed into the Belle Harbor neighborhood of Queens, a borough of New York City, shortly after takeoff. All 260 people on board the flight were killed, along with five people on the ground. It is the second-deadliest aviation incident in New York state; the second-deadliest aviation incident involving an Airbus A300, after Iran Air Flight 655; and the second-deadliest aviation accident to occur on U.S. soil, after American Airlines Flight 191.
+    '''
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
