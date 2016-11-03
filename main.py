@@ -97,10 +97,15 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     # create RDF from dependency tree
     # separate the parse tree into branches
     triples = []
+    subject = ''
     for sent in parsed.sents:
         for word in sent:
             if 'subj' in word.dep_:
-                subject = word.text
+                if 'PRP' not in word.tag_:
+                    subject = word.text
+                else:
+                    if subject == '':
+                        subject = word.text
         branches = to_branches(sent.root)
         for branch in branches:
             # for each branch, start from the bottom of the tree and find noun, verb, noun triples
@@ -163,7 +168,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 def main():
     text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
     text = '''
-    Airbus A320 is the biggest airplane in the world.
+    Airbus A320 is the biggest airplane in the world. It flew to JFK Airport in 1985.
     '''
     # load the spacy english pipeline
     spc = spacy.en.English()
