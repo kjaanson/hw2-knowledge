@@ -6,8 +6,7 @@ from spacy.attrs import LEMMA
 
 def merge_phrases(matcher, doc, i, matches):
     '''
-    Merge a phrase. We have to be careful here because we'll change the token indices.
-    To avoid problems, merge all the phrases once we're called on the last match.
+    FROM: https://www.bountysource.com/issues/38301771-subject-object-extraction-within-spacy
     '''
     if i != len(matches) - 1:
         return None
@@ -15,7 +14,6 @@ def merge_phrases(matcher, doc, i, matches):
     spans = [(ent_id, label, doc[start: end]) for ent_id, label, start, end in matches]
     for ent_id, label, span in spans:
         span.merge(label=label, tag='NNP' if label else span.root.tag_)
-
 
 def to_nltk_tree(node):
     if node.n_lefts + node.n_rights > 0:
@@ -62,8 +60,16 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     parsed = spacy(sentence)
     matcher(parsed)
 
-    #create RDF from dependency tree
-
+    # create RDF from dependency tree
+    # separate the parse tree into branches
+    for token in tokens:
+        if token.
+    # for each branch, start from the bottom of the tree and find noun, verb, noun triples
+    # if a branch is missing a noun, use the nsubj of the sentence as the other verb
+    # the higher verb is the subject and the lower is the object
+    for token in parsed:
+        if token.dep == 'nsubj':
+            print(token.orth_)
 
     [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
     print(parsed.ents)
@@ -85,6 +91,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 def main():
     # get the sentences to process. We consider eah sentence out of context, to keep things simple
     text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
+    # text = 'The competition between Airbus and Boeing has been characterised as a duopoly in the large jet airliner market since the 1990s.[1] This resulted from a series of mergers within the global aerospace industry, with Airbus beginning as a European consortium while the American Boeing absorbed its former arch-rival, McDonnell Douglas, in a 1997 merger. Other manufacturers, such as Lockheed Martin, Convair and Fairchild Aircraft in the United States, and British Aerospace and Fokker in Europe, were no longer in a position to compete effectively and withdrew from this market.'
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
