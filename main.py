@@ -130,7 +130,8 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
             if triple[1] is None:
                 triple[1] = 'is'
             if (triple[0] is not None) and (triple[1] is not None) and (triple[2] is not None):
-                triples.append(triple)
+                if triple[0] != triple[2]:
+                    triples.append(triple)
 
     for triple in triples:
         if (get_wiki(triple[0])[1] < 0.5):
@@ -165,7 +166,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 
 def main():
-    text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport'
+    text = 'Airbus A320 is the biggest airplane in the world. It flew to Estonia'
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
