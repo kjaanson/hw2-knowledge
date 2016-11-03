@@ -10,7 +10,7 @@ def get_wiki(text):
         title = page.title
         distance = edit_distance(text, title)
         url = page.url
-        return (url, distance)
+        return (url, distance/max(len(text), len(title)))
     except wikipedia.exceptions.PageError:
         return ('', len(text))
 
