@@ -38,21 +38,18 @@ def to_nltk_tree(node):
 
 def to_branches(node):
     branches = []
-    to_branches2(node, branches)
+    to_branches_(node, branches)
     return branches
 
 
-def to_branches2(node, branches, branch=[]):
+def to_branches_(node, branches, branch=[]):
     branch = branch[:]
     branch.append(node)
     if node.n_lefts + node.n_rights > 0:
         for child in node.children:
-            to_branches2(child, branches, branch)
+            to_branches_(child, branches, branch)
     else:
         branches.append(branch)
-
-
-
 
 
 def add_matchers(spc, datafile=None):
@@ -92,35 +89,53 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
     rdf = rdflib.Graph()
     parsed = spacy(sentence)
     matcher(parsed)
-
+    for ent in parsed.ents:
+        ent.merge()
     # create RDF from dependency tree
     # separate the parse tree into branches
-    print('AAAA')
+    triples = []
     for sent in parsed.sents:
+        for word in sent:
+            if word.dep_ == 'nsubj':
+                subject = word
         branches = to_branches(sent.root)
         for branch in branches:
-            pass
-    # for each branch, start from the bottom of the tree and find noun, verb, noun triples
-    # if a branch is missing a noun, use the nsubj of the sentence as the other verb
-    # the higher verb is the subject and the lower is the object
-    for token in parsed:
-        if token.dep == 'nsubj':
-            print(token.orth_)
+            # for each branch, start from the bottom of the tree and find noun, verb, noun triples
+            # the higher verb is the subject and the lower is the object
+            branch.reverse()
+            triple = [None, None, None]
+            for token in branch:
+                if 'NNP' in token.tag_:
+                    if triple[2] is None:
+                        triple[2] = token.text
+                    else:
+                        triple[0] = token.text
+                elif 'VBG' in token.tag_:
+                    if triple[1] is None:
+                        triple[1] = token.text
+            if triple[0] is None:
+                # if a branch is missing a noun, use the nsubj of the sentence as the other verb
+                triple[0] = subject
+            if (triple[0] is not None) and (triple[1] is not None) and (triple[2] is not None):
+                triples.append(triple)
 
-    [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
-    print(parsed.ents)
-    for word in parsed:
-        print(word.text, word.tag_, word.ent_type_, word.ent_iob)
+    for triple in triples:
+        rdf.add((rdflib.Literal(triple[0]), rdflib.Literal(triple[1]), rdflib.Literal(triple[2])))
+
+    # [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
+    # print(parsed.ents)
+    # for word in parsed:
+    #    print(word.text, word.tag_, word.ent_type_, word.ent_iob)
 
     # example RDF for sentence Bombardier CRJ700 belonging to Adria Airways is flying to Lisbon Portela Airport.
     # https://en.wikipedia.org/wiki/Bombardier_CRJ700_series, http://conceptnet5.media.mit.edu/web/c/en/owner, https://www.adria.si/en/
     # https://en.wikipedia.org/wiki/Bombardier_CRJ700_series, http://conceptnet5.media.mit.edu/web/c/en/fly, https://en.wikipedia.org/wiki/Lisbon_Airport
-    rdf.add((rdflib.URIRef('https://en.wikipedia.org/wiki/Bombardier_CRJ700_series'),
-             rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/owner'),
-             rdflib.URIRef('https://www.adria.si/en/')))
-    rdf.add((rdflib.URIRef('https://en.wikipedia.org/wiki/Bombardier_CRJ700_series'),
-             rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/fly'),
-             rdflib.URIRef('https://en.wikipedia.org/wiki/Lisbon_Airport')))
+    # rdf.add((rdflib.URIRef('https://en.wikipedia.org/wiki/Bombardier_CRJ700_series'),
+    #          rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/owner'),
+    #          rdflib.URIRef('https://www.adria.si/en/')))
+    # rdf.add((rdflib.URIRef('https://en.wikipedia.org/wiki/Bombardier_CRJ700_series'),
+    #          rdflib.URIRef('http://conceptnet5.media.mit.edu/web/c/en/fly'),
+    #          rdflib.URIRef('https://en.wikipedia.org/wiki/Lisbon_Airport')))
     return rdf
 
 
