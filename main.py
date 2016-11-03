@@ -1,7 +1,18 @@
 import rdflib
 import spacy
-from nltk import Tree
+import wikipedia
+from nltk import Tree, edit_distance
 from spacy.attrs import LEMMA
+
+def get_wiki(text):
+    try:
+        page = wikipedia.page(text)
+        title = page.title
+        distance = edit_distance(text, title)
+        url = page.url
+        return (url, distance/max(len(text), len(title)))
+    except wikipedia.exceptions.PageError:
+        return ('', 1.0)
 
 
 def merge_phrases(matcher, doc, i, matches):
