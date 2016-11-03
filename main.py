@@ -12,7 +12,7 @@ def get_wiki(text):
         url = page.url
         return (url, distance/max(len(text), len(title)))
     except wikipedia.exceptions.PageError:
-        return ('', len(text))
+        return ('', 1.0)
 
 
 def merge_phrases(matcher, doc, i, matches):
