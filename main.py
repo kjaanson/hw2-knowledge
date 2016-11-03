@@ -6,7 +6,7 @@ from spacy.attrs import LEMMA
 
 
 def get_wiki(text):
-    return ('', 1.0)
+    # return ('', 1.0)
     try:
         page = wikipedia.page(text)
         title = page.title
@@ -165,10 +165,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 
 def main():
-    text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
-    text = '''
-    Airbus A320 is the biggest airplane in the world. It flew to JFK Airport in 1985.
-    '''
+    text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport'
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
