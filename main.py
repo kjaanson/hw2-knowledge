@@ -27,10 +27,32 @@ def merge_phrases(matcher, doc, i, matches):
         span.merge(label=label, tag='NNP' if label else span.root.tag_)
 
 def to_nltk_tree(node):
+    '''
+    FROM: http://stackoverflow.com/questions/36610179/how-to-get-the-dependency-tree-with-spacy
+    '''
     if node.n_lefts + node.n_rights > 0:
         return Tree(node.orth_ + ' ' + node.tag_ + ' ' + node.dep_, [to_nltk_tree(child) for child in node.children])
     else:
         return node.orth_ + ' ' + node.tag_ + ' ' + node.dep_
+
+
+def to_branches(node):
+    branches = []
+    to_branches2(node, branches)
+    return branches
+
+
+def to_branches2(node, branches, branch=[]):
+    branch = branch[:]
+    branch.append(node)
+    if node.n_lefts + node.n_rights > 0:
+        for child in node.children:
+            to_branches2(child, branches, branch)
+    else:
+        branches.append(branch)
+
+
+
 
 
 def add_matchers(spc, datafile=None):
@@ -73,8 +95,11 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
     # create RDF from dependency tree
     # separate the parse tree into branches
-    for token in tokens:
-        if token.
+    print('AAAA')
+    for sent in parsed.sents:
+        branches = to_branches(sent.root)
+        for branch in branches:
+            pass
     # for each branch, start from the bottom of the tree and find noun, verb, noun triples
     # if a branch is missing a noun, use the nsubj of the sentence as the other verb
     # the higher verb is the subject and the lower is the object
