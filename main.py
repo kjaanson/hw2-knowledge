@@ -119,10 +119,9 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
                         triple[2] = token.text
                     else:
                         triple[0] = token.text
-                elif 'VBG' in token.tag_:
-                    if triple[1] is None:
-                        triple[1] = token.text
-                        gotverb = True
+                elif 'VB' in token.tag_ and not gotverb:
+                    triple[1] = token.text
+                    gotverb = True
                 elif 'prep' in token.dep_ and not gotverb:
                     triple[1] = token.text
             if triple[0] is None:
