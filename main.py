@@ -6,6 +6,7 @@ from spacy.attrs import LEMMA
 
 
 def get_wiki(text):
+    return ('', 1.0)
     try:
         page = wikipedia.page(text)
         title = page.title
@@ -106,8 +107,9 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
             # the higher verb is the subject and the lower is the object
             branch.reverse()
             triple = [None, None, None]
+            gotverb = False
             for token in branch:
-                if 'NN' in token.tag_:
+                if 'NN' in token.tag_ or 'JJ' in token.tag_:
                     if triple[2] is None:
                         triple[2] = token.text
                     else:
@@ -115,6 +117,9 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
                 elif 'VBG' in token.tag_:
                     if triple[1] is None:
                         triple[1] = token.text
+                        gotverb = True
+                elif 'prep' in token.dep_ and not gotverb:
+                    triple[1] = token.text
             if triple[0] is None:
                 # if a branch is missing a noun, use the nsubj of the sentence as the other verb
                 triple[0] = subject
@@ -138,7 +143,7 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
             object = rdflib.Literal(triple[2])
         rdf.add((subject, predicate, object))
 
-    # [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
+    [to_nltk_tree(sent.root).pretty_print() for sent in parsed.sents]
     # print(parsed.ents)
     # for word in parsed:
     #    print(word.text, word.tag_, word.ent_type_, word.ent_iob)
@@ -157,9 +162,9 @@ def parse_sentence_to_rdf(spacy, sentence, matcher):
 
 def main():
     text = 'Bombardier CRJ-700 belonging to Adria Airways is flying to Lisbon Portela Airport.'
-    # text = '''
-    # American Airlines Flight 587 was a regularly scheduled passenger flight from John F. Kennedy International Airport in New York City to Santo Domingo's Las Américas International Airport in the Dominican Republic. On November 12, 2001, the Airbus A300-600 flying the route crashed into the Belle Harbor neighborhood of Queens, a borough of New York City, shortly after takeoff. All 260 people on board the flight were killed, along with five people on the ground. It is the second-deadliest aviation incident in New York state; the second-deadliest aviation incident involving an Airbus A300, after Iran Air Flight 655; and the second-deadliest aviation accident to occur on U.S. soil, after American Airlines Flight 191.
-    # '''
+    text = '''
+    Airbus A320 is the biggest airplane in the world.
+    '''
     # load the spacy english pipeline
     spc = spacy.en.English()
     matcher = add_matchers(spc, datafile='Aircraftmodels20161028.txt')
